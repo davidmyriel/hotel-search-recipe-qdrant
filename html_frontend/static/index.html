@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Search</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #1a1a1a;
+            --secondary-color: #f8f9fa;
+            --border-color: #e0e0e0;
+            --text-color: #333;
+            --hover-color: #f5f5f5;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            padding-top: 60px;
+            background-color: white;
+            color: var(--text-color);
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background-color: #f8f9fa;  /* Light gray background */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 0;
+            justify-content: space-between;
+        }
+
+        .navbar-brand {
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: #1a1a1a;  /* Slightly darker text for better contrast */
+            white-space: nowrap;
+            width: 300px; /* Increased width to match new sidebar width */
+            padding-left: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .navbar-brand img {
+            height: 24px;  /* Made slightly smaller to match text height */
+            width: auto;
+            object-fit: contain;
+            margin-left: 5px;  /* Add a little space after "by" */
+        }
+
+        .social-links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding-right: 25px;
+        }
+
+        .social-links a {
+            color: #1a1a1a;  /* Match brand text color */
+            text-decoration: none;
+            font-size: 20px;
+            transition: color 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .social-links a:hover {
+            color: #007bff;
+        }
+
+        .sidebar {
+            width: 300px; /* Increased width */
+            background-color: white;
+            padding: 0 25px;
+            height: calc(100vh - 70px);
+            position: fixed;
+            overflow-y: auto;
+            border-right: none;
+            box-shadow: 2px 0 6px rgba(0,0,0,0.04);
+            box-sizing: border-box;
+            top: 70px;
+            left: 0;  /* Ensure fixed position from left */
+        }
+
+        .sidebar h3 {
+            margin: 30px 0;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .main-content {
+            margin-left: 300px; /* Increased margin to match new sidebar width */
+            padding: 0 40px;
+            width: calc(100% - 300px); /* Adjusted width calculation */
+            box-sizing: border-box;
+            background-color: white;
+            box-shadow: inset 2px 0 6px rgba(0,0,0,0.02);  /* Very subtle inset shadow for main content */
+            min-height: calc(100vh - 70px);  /* Ensure full height */
+        }
+
+        .main-search {
+            width: 100%;
+            padding: 30px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .main-search::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.02), transparent);
+        }
+
+        .main-search input {
+            width: 100%;
+            padding: 15px 25px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            background-color: var(--secondary-color);
+        }
+
+        .main-search input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background-color: white;
+        }
+
+        .results-grid {
+            /* Switch grid to handle full-width cards */
+            grid-template-columns: 1fr; 
+            gap: 25px; /* Adjust gap between cards */
+        }
+
+        /* Add media queries for responsiveness */
+        @media (max-width: 1400px) {
+            .results-grid {
+                grid-template-columns: repeat(3, 1fr);  /* 3 columns on smaller screens */
+            }
+        }
+
+        @media (max-width: 1100px) {
+            .results-grid {
+                grid-template-columns: repeat(2, 1fr);  /* 2 columns on even smaller screens */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .results-grid {
+                grid-template-columns: 1fr;  /* 1 column on mobile */
+            }
+        }
+
+        .product-card {
+            /* Use flexbox for horizontal layout */
+            display: flex; 
+            gap: 20px; /* Gap between image, text, rating sections */
+            align-items: flex-start; /* Align items to the top */
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: box-shadow 0.3s ease;
+            animation: none; /* Disable previous fade-in if needed */
+            opacity: 1; /* Ensure visible */
+        }
+
+        .product-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: none; /* Disable previous hover effect */
+        }
+
+        .card-image {
+            flex: 0 0 160px; /* Fixed width, don't grow/shrink */
+            height: 160px; /* Make it square or adjust aspect-ratio */
+        }
+
+        .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+            display: block; /* Prevents bottom space */
+            margin-bottom: 0; /* Override default img margin */
+        }
+
+        .card-text {
+            flex: 1 1 auto; /* Allow text section to grow/shrink */
+            display: flex;
+            flex-direction: column;
+            gap: 8px; /* Spacing within text block */
+        }
+
+        .card-text h3 {
+            margin: 0;
+            font-size: 1.1rem; /* Slightly larger heading */
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-text .location {
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .card-text .map-link {
+            font-size: 0.9rem;
+            color: #007bff;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .card-text .description {
+            font-size: 0.8rem; /* Reduced font size */
+            color: #666;
+            line-height: 1.5;
+            margin-top: 5px;
+        }
+
+        .card-rating-action {
+            flex: 0 0 130px; /* Adjust width as needed */
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end; /* Align items to the right */
+            justify-content: space-between; /* Space out rating and button */
+            text-align: right;
+            gap: 10px;
+        }
+
+        .rating-section .label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .rating-section .reviews {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        .rating-pill {
+            background-color: #003580; /* Dark blue like booking.com */
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-top: 5px; /* Space from label/reviews */
+            display: inline-block; /* Fit content */
+        }
+
+        .cta-button {
+            background-color: #007bff; /* Bright blue */
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.2s ease;
+            width: 100%; /* Make button full width of its container */
+            margin-top: 10px; /* Ensure space from rating */
+        }
+
+        .cta-button:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+        }
+
+        /* Add basic responsiveness */
+        @media (max-width: 768px) {
+            .product-card {
+                flex-direction: column; /* Stack vertically on mobile */
+                align-items: stretch; /* Stretch items */
+            }
+            .card-image {
+                flex-basis: auto; /* Let height be auto */
+                width: 100%; /* Full width image */
+                height: 200px; /* Adjust height for mobile */
+            }
+            .card-rating-action {
+                flex-basis: auto;
+                flex-direction: row; /* Arrange rating/button side-by-side */
+                justify-content: space-between;
+                align-items: center; /* Center items vertically */
+                width: 100%;
+                margin-top: 15px;
+            }
+            .rating-section {
+                text-align: left;
+            }
+            .cta-button {
+                width: auto; /* Let button size to content */
+                margin-top: 0;
+            }
+        }
+
+        .facet-group {
+            margin-bottom: 30px;  /* Reduced from 40px */
+            padding-bottom: 20px;  /* Reduced from 25px */
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .facet-group:last-child {
+            border-bottom: none;
+        }
+
+        .facet-title {
+            font-weight: 600;
+            margin-bottom: 12px;  /* Reduced from 15px */
+            color: var(--primary-color);
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 0.7px;
+        }
+
+        .facet-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;  /* Reduced from 15px */
+        }
+
+        .facet-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .facet-option label {
+            font-size: 1rem;
+            cursor: pointer;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .clear-filters {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .clear-filters:hover {
+            background-color: var(--hover-color);
+        }
+
+        .results-summary {
+            font-size: 0.9rem;
+            color: #666;
+            margin: 0;
+            padding: 0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        #loadMoreBtn {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            border: 1px solid var(--border-color);
+            padding: 15px 30px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        #loadMoreBtn:hover {
+            background-color: var(--hover-color);
+        }
+
+        /* Custom checkbox styles */
+        input[type="checkbox"] {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        input[type="checkbox"]:checked::after {
+            content: "✓";
+            color: white;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Add smooth scrolling to sidebar */
+        .sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(0,0,0,0.2);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            width: 90%;
+            max-width: 800px; /* Reduced max-width */
+            border-radius: 10px; /* Slightly smaller radius */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 15px; /* Adjusted position */
+            top: 10px; /* Adjusted position */
+            font-size: 24px; /* Slightly smaller */
+            font-weight: bold;
+            color: #666;
+            cursor: pointer;
+            z-index: 1002;
+        }
+
+        .modal-body {
+            display: flex;
+            gap: 25px; /* Reduced gap */
+            padding: 25px; /* Reduced padding */
+        }
+
+        #modalImage {
+            width: 300px; /* Reduced width */
+            height: 400px; /* Reduced height */
+            object-fit: cover;
+            border-radius: 6px; /* Slightly smaller radius */
+        }
+
+        .modal-details {
+            flex: 1;
+            padding: 10px 0; /* Reduced vertical padding */
+        }
+
+        .modal-details h2 {
+            margin: 0 0 15px 0; /* Reduced bottom margin */
+            font-size: 1.3rem; /* Slightly smaller */
+            color: var(--primary-color);
+        }
+
+        .modal-details p {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .modal-body {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            #modalImage {
+                width: 100%;
+                height: auto;
+            }
+        }
+
+        .product-meta {
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Reduced gap */
+            margin-bottom: 15px; /* Reduced bottom margin */
+        }
+
+        .price {
+            font-size: 1.5rem; /* Slightly smaller */
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .availability {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .availability.in-stock {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .availability.out-of-stock {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .product-info {
+            background-color: var(--secondary-color);
+            padding: 15px; /* Reduced padding */
+            border-radius: 6px;
+            margin-bottom: 15px; /* Reduced bottom margin */
+        }
+
+        .info-row {
+            display: flex;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-row .label {
+            width: 100px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .description h3 {
+            font-size: 1rem; /* Slightly smaller */
+            margin-bottom: 8px; /* Reduced bottom margin */
+            color: var(--primary-color);
+        }
+
+        .amenities-section h3 {
+            font-size: 1rem; /* Slightly smaller */
+            margin-bottom: 8px; /* Reduced bottom margin */
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-brand">
+            Hotel Search by
+            <img src="/static/logo.png" alt="Superlinked Logo">
+            <img src="/static/sl-logo.png" alt="SL Logo" style="height: 24px; width: auto; object-fit: contain;">
+        </div>
+        <div class="social-links">
+            <a href="https://discord.gg/your-discord" target="_blank" title="Discord">
+                <i class="fab fa-discord"></i>
+            </a>
+            <a href="https://github.com/your-github" target="_blank" title="GitHub">
+                <i class="fab fa-github"></i>
+            </a>
+            <a href="https://linkedin.com/in/your-linkedin" target="_blank" title="LinkedIn">
+                <i class="fab fa-linkedin"></i>
+            </a>
+            <a href="https://twitter.com/your-twitter" target="_blank" title="Twitter">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <!-- Removed Filters Heading -->
+        <!-- Removed Amenities Facet Group -->
+        <!-- Removed Property Rating Facet Group -->
+        <!-- Removed Clear All Filters Button -->
+
+        <!-- Keep Debug Params Section -->
+        <div class="debug-params-section" style="margin-top: 30px;">
+            <h4 style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 10px;">Generated Query Params</h4>
+            <pre id="debugParamsOutput" style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; font-size: 0.75rem; max-height: 400px; overflow-y: auto; word-wrap: break-word; white-space: pre-wrap;">
+                Parameters will appear here...
+            </pre>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="main-search">
+            <input type="text" id="searchInput" placeholder="Search for hotels... (e.g., cheap hotel in Berlin with breakfast)">
+        </div>
+        <div id="loading" class="loading">Searching...</div>
+        <div id="summary" class="results-summary" style="display: none;"></div>
+        <div id="results" class="results-grid"></div>
+        <div class="load-more">
+            <button id="loadMoreBtn" onclick="loadMore()">Load More</button>
+        </div>
+    </div>
+
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-body">
+                <img id="modalImage" src="" alt="Hotel Image">
+                <div class="modal-details">
+                    <h2 id="modalTitle">Hotel Name/ID</h2>
+                    <div class="product-meta">
+                        <!-- Price -->
+                        <span class="price">$<span id="modalPrice">0.00</span></span>
+                        <!-- Rating -->
+                        <span>
+                            Rating: <span id="modalRating">N/A</span> (<span id="modalRatingCount">0</span> reviews)
+                        </span>
+                    </div>
+                    <div class="product-info">
+                        <div class="info-row">
+                            <span class="label">City:</span>
+                            <span id="modalCity">N/A</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Country:</span>
+                            <span id="modalCountry">N/A</span>
+                        </div>
+                        <!-- Removed Category, Type, Color, Size, Article ID -->
+                    </div>
+                    <div class="description">
+                        <h3>Description</h3>
+                        <p id="modalDescription">Description goes here.</p>
+                    </div>
+                    <div class="amenities-section">
+                        <h3>Amenities</h3>
+                        <ul id="modalAmenities" style="list-style: disc; padding-left: 20px;">
+                            <!-- Amenities will be populated here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentOffset = 0;
+        let currentQuery = '';
+        let hasMore = true;
+
+        async function searchHotels() {
+            currentOffset = 0;
+            currentQuery = document.getElementById('searchInput').value.trim();
+            hasMore = true;
+            
+            const loadingDiv = document.getElementById('loading');
+            const resultsDiv = document.getElementById('results');
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            const summaryDiv = document.getElementById('summary');
+
+            loadingDiv.style.display = 'block';
+            resultsDiv.innerHTML = '';
+            loadMoreBtn.style.display = 'none';
+            summaryDiv.style.display = 'none';
+
+            try {
+                await fetchResults();
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        async function loadMore() {
+            if (!hasMore) return;
+            
+            const loadingDiv = document.getElementById('loading');
+            loadingDiv.style.display = 'block';
+            
+            try {
+                await fetchResults();
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        async function fetchResults() {
+            try {
+                const searchParams = new URLSearchParams();
+                if (currentQuery) searchParams.append('query', currentQuery);
+                
+                searchParams.append('limit', '20');
+                searchParams.append('offset', currentOffset.toString());
+                
+                const startTime = performance.now();
+                const response = await fetch(`/search?${searchParams}`);
+                const responsePayload = await response.json();
+                const searchTime = Math.round(performance.now() - startTime);
+                
+                if (!response.ok) {
+                    const errorDetail = responsePayload.detail || 'Search failed';
+                    throw new Error(errorDetail);
+                }
+
+                const data = responsePayload.results || [];
+                const debugParams = responsePayload.debug_params || {};
+
+                // Update the debug params display
+                const debugOutputEl = document.getElementById('debugParamsOutput');
+                const defaultParamsText = JSON.stringify({
+                    "price_weight": 0.0,
+                    "rating_weight": 0.0,
+                    "rating_count_weight": 0.0,
+                    "description_weight": 0.0
+                }, null, 2);
+
+                // Check if the received debugParams object is empty
+                if (Object.keys(debugParams).length === 0) {
+                    // If empty, display the default text
+                    debugOutputEl.textContent = defaultParamsText;
+                } else {
+                    // Otherwise, display the actual received params
+                    debugOutputEl.textContent = JSON.stringify(debugParams, null, 2);
+                }
+                
+                const resultsDiv = document.getElementById('results');
+                const summaryDiv = document.getElementById('summary');
+                const loadMoreBtn = document.getElementById('loadMoreBtn');
+
+                if (currentOffset === 0) {
+                    summaryDiv.innerHTML = `${data.length} results found in ${searchTime}ms`;
+                    summaryDiv.style.display = 'block';
+                }
+
+                if (data.length === 0) {
+                    if (currentOffset === 0) {
+                        resultsDiv.innerHTML = '<p style="text-align: center; grid-column: 1 / -1;">No matching items found.</p>';
+                        summaryDiv.style.display = 'none';
+                    }
+                    hasMore = false;
+                    loadMoreBtn.style.display = 'none';
+                } else {
+                    data.forEach((result, index) => {
+                        console.log(`DEBUG: Processing result ${index}:`, JSON.stringify(result)); 
+
+                        const productCard = document.createElement('div');
+                        productCard.className = 'product-card'; // Use the main card class
+
+                        // --- Generate HTML for the new layout --- 
+                        const imageHTML = `
+                            <div class="card-image">
+                                <img src="${result.image_src || ''}" alt="${result.id}"
+                                     onerror="this.onerror=null; this.src='https://via.placeholder.com/160x160?text=No+Image';">
+                            </div>
+                        `;
+
+                        const textHTML = `
+                            <div class="card-text">
+                                <h3>${result.id}</h3> 
+                                <div class="location">
+                                    <span>${result.city || 'N/A'}, ${result.country || 'N/A'}</span>
+                                    <!-- Add map link functionality if needed -->
+                                    <!-- <span class="map-link">Show on map</span> -->
+                                </div>
+                                <div class="description">
+                                    ${result.description ? (result.description.length > 250 ? result.description.substring(0, 250) + '...' : result.description) : 'No description available.'}
+                                </div>
+                            </div>
+                        `;
+
+                        // Determine rating label (example logic)
+                        let ratingLabel = 'Okay';
+                        if (result.rating >= 9) ratingLabel = 'Exceptional';
+                        else if (result.rating >= 8) ratingLabel = 'Very Good';
+                        else if (result.rating >= 7) ratingLabel = 'Good';
+
+                        const ratingActionHTML = `
+                            <div class="card-rating-action">
+                                <div class="rating-section">
+                                    <div class="label">${ratingLabel}</div>
+                                    <div class="reviews">${result.rating_count || 0} reviews</div>
+                                    <div class="rating-pill">${result.rating !== undefined ? result.rating.toFixed(1) : 'N/A'}</div>
+                                </div>
+                                <button class="cta-button">Show prices</button> <!-- Add functionality later -->
+                            </div>
+                        `;
+
+                        // Combine the sections
+                        productCard.innerHTML = imageHTML + textHTML + ratingActionHTML;
+
+                        console.log(`DEBUG: Result ${index} HTML generated.`); // Simplified log
+
+                        // productCard.onclick = () => showHotelDetails(result); // Keep modal click or remove/change?
+                        // For now, let's make the button open the modal
+                        const priceButton = productCard.querySelector('.cta-button');
+                        if (priceButton) {
+                            priceButton.onclick = (e) => {
+                                e.stopPropagation(); // Prevent card click if needed
+                                showHotelDetails(result);
+                            };
+                        }
+                        // Optionally keep click on whole card too?
+                        // productCard.onclick = () => showHotelDetails(result);
+                        
+                        resultsDiv.appendChild(productCard);
+                        console.log(`DEBUG: Appended card for result ${index}`);
+                    });
+
+                    currentOffset += data.length;
+                    loadMoreBtn.style.display = data.length === 20 ? 'inline-block' : 'none';
+                    hasMore = data.length === 20;
+                }
+            } catch (error) {
+                const resultsDiv = document.getElementById('results');
+                const summaryDiv = document.getElementById('summary');
+                resultsDiv.innerHTML = `<p style="text-align: center; grid-column: 1 / -1;">Error: ${error.message}</p>`;
+                summaryDiv.style.display = 'none';
+                console.error('Error:', error);
+            }
+        }
+
+        window.addEventListener('scroll', () => {
+            if (!hasMore) return;
+            
+            const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+            if (scrollTop + clientHeight >= scrollHeight - 5) {
+                loadMore();
+            }
+        });
+
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchHotels();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            searchHotels();     // Initial search on load
+        });
+
+        function showHotelDetails(result) {
+            const modal = document.getElementById('productModal');
+            const modalImg = document.getElementById('modalImage');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalDesc = document.getElementById('modalDescription');
+            const modalPrice = document.getElementById('modalPrice');
+            const modalRating = document.getElementById('modalRating');
+            const modalRatingCount = document.getElementById('modalRatingCount');
+            const modalCity = document.getElementById('modalCity');
+            const modalCountry = document.getElementById('modalCountry');
+            const modalAmenities = document.getElementById('modalAmenities');
+
+            modalImg.src = result.image_src || '';
+            modalImg.onerror = () => {
+                modalImg.src = 'https://via.placeholder.com/400x533?text=Image+Not+Available';
+            };
+            modalTitle.textContent = result.id;
+            modalDesc.textContent = result.description || 'No description provided.';
+            modalPrice.textContent = (result.price !== undefined && result.price !== null) ? result.price.toFixed(2) : 'N/A';
+            
+            modalRating.textContent = (result.rating !== undefined && result.rating !== null) ? result.rating.toFixed(1) : 'N/A';
+            modalRatingCount.textContent = result.rating_count || 0;
+            modalCity.textContent = result.city || 'N/A';
+            modalCountry.textContent = result.country || 'N/A';
+
+            const allAmenities = [
+                ...(result.property_amenities || []),
+                ...(result.room_amenities || []),
+                ...(result.wellness_spa || []),
+                ...(result.accessibility || []),
+                ...(result.for_children || [])
+            ];
+            modalAmenities.innerHTML = allAmenities.length > 0 
+                ? allAmenities.map(a => `<li>${a}</li>`).join('') 
+                : '<li>No amenities listed.</li>';
+
+            modal.style.display = 'block';
+        }
+
+        document.querySelector('.close').onclick = function() {
+            document.getElementById('productModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('productModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html> 
