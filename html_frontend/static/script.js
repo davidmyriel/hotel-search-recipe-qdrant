@@ -178,6 +178,23 @@ document.getElementById('searchInput').addEventListener('keypress', function(e) 
 
 document.addEventListener('DOMContentLoaded', async () => {
     searchHotels();
+
+    // Add click listeners for search suggestions
+    document.querySelectorAll('.search-suggestions a').forEach(link => {
+        link.addEventListener('click', (event) => {
+            event.preventDefault(); // Prevent default anchor behavior
+            const suggestionText = event.target.getAttribute('data-suggestion');
+            const searchInput = document.getElementById('searchInput');
+            searchInput.value = suggestionText; // Put suggestion in search box
+            searchHotels(); // Trigger search
+        });
+    });
+
+    // Add click listener for reset button
+    document.getElementById('resetSearchBtn').addEventListener('click', () => {
+        document.getElementById('searchInput').value = ''; // Clear search input
+        searchHotels(); // Trigger default search
+    });
 });
 
 function showHotelDetails(result) {
