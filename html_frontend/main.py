@@ -49,7 +49,7 @@ async def read_root(request: Request):
 @app.get("/search")
 async def search_hotels(
     query: Optional[str] = Query(None),
-    # Removed amenity and min_rating parameters
+
     limit: int = Query(20),
     offset: int = Query(0) 
 ):
@@ -61,7 +61,6 @@ async def search_hotels(
         "limit": limit,
     }
 
-    # Removed filter parameter logic
 
     async with httpx.AsyncClient() as client:
         try:
@@ -95,12 +94,7 @@ async def search_hotels(
             except Exception:
                 pass # Ignore if response body isn't valid JSON
             raise HTTPException(status_code=exc.response.status_code, detail=error_detail)
-
-# Removed the /filters endpoint
-# @app.get("/filters")
-# async def get_filters():
-# ... (previous code removed) ...
-
+        
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000) 
